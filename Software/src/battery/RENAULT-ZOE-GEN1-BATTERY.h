@@ -52,6 +52,7 @@ class RenaultZoeGen1Battery : public UdsCanBattery {
   static const int MIN_CELL_VOLTAGE_MV = 2700;  //Battery is put into emergency stop if one cell goes below this value
 
   // One-byte KWP2000 local identifiers polled from the BMS (0x21 service).
+  static const int GROUP1_POWER_LIMITS = 0x01;         // CanZE / PyRen 7bb.6101 (Power Limits & Chemical SOC)
   static const int GROUP1_CELLVOLTAGES_1_POLL = 0x41;  // Cells 1-62
   static const int GROUP2_CELLVOLTAGES_2_POLL = 0x42;  // Cells 63-96
   static const int GROUP3_METRICS = 0x61;              // Mileage + alltime energy

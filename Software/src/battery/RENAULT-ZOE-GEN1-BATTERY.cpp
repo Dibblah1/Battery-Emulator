@@ -57,6 +57,14 @@ uint16_t RenaultZoeGen1Battery::handle_pid(uint16_t pid, uint32_t value, const u
   // points at the raw value bytes, starting right after the echoed local
   // identifier (the response is `61 <local ID> <value...>`).
   switch (pid) {
+    case GROUP1_POWER_LIMITS:  // 0x01, PyRen PR002/PR012 (Chemical SOC at data[35..36])
+      if (length >= 37) {
+        uint16_t chemical_soc_pptt = ((uint16_t)data[35] << 8) | data[36];
+        if (chemical_soc_pptt <= 10000 && chemical_soc_pptt > 0) {
+          LB_SOC_pptt = chemical_soc_pptt;
+        }
+      }
+      break;
     case GROUP1_CELLVOLTAGES_1_POLL:  // 0x41, cells 1-62
       if (length >= 124) {
         for (uint8_t cell = 0; cell < 62; cell++) {
@@ -232,6 +240,7 @@ void RenaultZoeGen1Battery::setup(void) {  // Performs one time setup at startup
   set_pid_scan_mode(PidScanMode::OneByteLocalId);
 
   static const uint16_t pid_scan_list[] = {
+      GROUP1_POWER_LIMITS,         // CanZE / PyRen 7bb.6101 (Power Limits & Chemical SOC)
       GROUP1_CELLVOLTAGES_1_POLL,  // Cells 1-62
       GROUP2_CELLVOLTAGES_2_POLL,  // Cells 63-96
       GROUP6_BALANCING,            // Balancing status bits
