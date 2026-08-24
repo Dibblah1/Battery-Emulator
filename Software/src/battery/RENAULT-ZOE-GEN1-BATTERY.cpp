@@ -14,9 +14,9 @@ void RenaultZoeGen1Battery::
     update_values() {  //This function maps all the values fetched via CAN to the correct parameters used for modbus
   datalayer_battery->status.soh_pptt = (LB_SOH * 100);  // Increase range from 99% -> 99.00%
 
-  // Use raw BMS Chemical SOC% (0x654) if available, otherwise fall back to LB_Display_SOC (0x155)
-  if (LB_SOC > 0 && LB_SOC <= 100) {
-    datalayer_battery->status.real_soc = (LB_SOC * 100);
+  // Use 16-bit CanZE RealSOC (LB_SOC_pptt: 0.01% resolution) if available, otherwise fall back to LB_Display_SOC
+  if (LB_SOC_pptt > 0 && LB_SOC_pptt <= 10000) {
+    datalayer_battery->status.real_soc = LB_SOC_pptt;
   } else if (LB_Display_SOC > 0) {
     datalayer_battery->status.real_soc = (uint16_t)(LB_Display_SOC * 0.25f);
   }
@@ -82,6 +82,14 @@ uint16_t RenaultZoeGen1Battery::handle_pid(uint16_t pid, uint32_t value, const u
       if (length >= 17) {
         battery_mileage_in_km = (data[11] << 8) | data[12];
         kWh_from_beginning_of_battery_life = (data[15] << 8) | data[16];
+      }
+      break;
+    case GROUP5_REALSOC:  // 0x03, CanZE RealSOC (7bb.6103.192: bits 192-207, 0.01 resolution -> 16-bit big endian pptt)
+      if (length >= 24) {
+        uint16_t raw_soc_pptt = ((uint16_t)data[22] << 8) | data[23];
+        if (raw_soc_pptt <= 10000 && raw_soc_pptt > 0) {
+          LB_SOC_pptt = raw_soc_pptt;
+        }
       }
       break;
     case GROUP6_BALANCING: {  // 0x07, 18 bytes payload, 1 bit per cell (LSB-first bit order)
@@ -161,6 +169,7 @@ void RenaultZoeGen1Battery::handle_incoming_can_frame(CAN_frame rx_frame) {
       break;
     case 0x654:  //SOC
       LB_SOC = rx_frame.data.u8[3];
+      LB_SOC_pptt = rx_frame.data.u8[3] * 100;
       break;
     default:
       break;

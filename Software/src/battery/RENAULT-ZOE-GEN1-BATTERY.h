@@ -55,6 +55,7 @@ class RenaultZoeGen1Battery : public UdsCanBattery {
   static const int GROUP1_CELLVOLTAGES_1_POLL = 0x41;  // Cells 1-62
   static const int GROUP2_CELLVOLTAGES_2_POLL = 0x42;  // Cells 63-96
   static const int GROUP3_METRICS = 0x61;              // Mileage + alltime energy
+  static const int GROUP5_REALSOC = 0x03;              // CanZE RealSOC (Chemical SOC)
   static const int GROUP6_BALANCING = 0x07;            // Balancing status bits
 
   unsigned long previousMillis100 = 0;  // will store last time a 100ms CAN Message was sent
@@ -67,6 +68,7 @@ class RenaultZoeGen1Battery : public UdsCanBattery {
                        .data = {0x07, 0x1d, 0x00, 0x02, 0x5d, 0x80, 0x5d, 0xc8}};
 
   uint16_t LB_SOC = 50;
+  uint16_t LB_SOC_pptt = 0;
   uint16_t LB_Display_SOC = 50;
   uint16_t LB_SOH = 99;
   int16_t LB_Average_Temperature = 0;
