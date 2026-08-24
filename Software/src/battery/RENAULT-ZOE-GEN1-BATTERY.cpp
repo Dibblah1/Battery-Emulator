@@ -14,8 +14,12 @@ void RenaultZoeGen1Battery::
     update_values() {  //This function maps all the values fetched via CAN to the correct parameters used for modbus
   datalayer_battery->status.soh_pptt = (LB_SOH * 100);  // Increase range from 99% -> 99.00%
 
-  datalayer_battery->status.real_soc = (uint16_t)(LB_Display_SOC * 0.25f);  // 0.0025% per bit -> pptt (0.01% units)
-  // Alternative: datalayer_battery->status.real_soc = (LB_SOC * 100); // Use raw BMS Chemical SOC% (0x654)
+  // Use raw BMS Chemical SOC% (0x654) if available, otherwise fall back to LB_Display_SOC (0x155)
+  if (LB_SOC > 0 && LB_SOC <= 100) {
+    datalayer_battery->status.real_soc = (LB_SOC * 100);
+  } else if (LB_Display_SOC > 0) {
+    datalayer_battery->status.real_soc = (uint16_t)(LB_Display_SOC * 0.25f);
+  }
 
   datalayer_battery->status.current_dA = (((int32_t)LB_Current_raw * 10) / 4) - 5000;
 
